@@ -4,6 +4,7 @@ spring boot 启动时加载配置文件的顺序 以及优先级
 
 > `org.springframework.boot.SpringApplication#run(java.lang.String...)`
 > `org.springframework.boot.SpringApplication#prepareEnvironment()`
+> 	
 > 	//  发送配置准备好的事件，由配置监听器做接下来的工作。
 > 	`listeners.environmentPrepared(environment);`
 > 	
