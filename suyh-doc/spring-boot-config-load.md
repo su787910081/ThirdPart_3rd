@@ -1,5 +1,17 @@
 spring boot 启动时加载配置文件的顺序 以及优先级
 
+调用链：
+
+> `org.springframework.boot.SpringApplication#run(java.lang.String...)`
+> `org.springframework.boot.SpringApplication#prepareEnvironment()`
+> 	# 发送配置准备好的事件，由配置监听器做接下来的工作。
+> 	`listeners.environmentPrepared(environment);`
+> 	
+> // 监听器监听触发方法
+> `org.springframework.boot.context.config.ConfigFileApplicationListener#postProcessEnvironment(xxx,xxx)`
+
+
+
 源码所在类: `org.springframework.boot.context.config.ConfigFileApplicationListener.Loader`
 
 spring boot 的配置文件的加载顺序与配置文件的优先级，以如下配置激活文件为例：
