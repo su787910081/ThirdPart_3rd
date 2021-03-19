@@ -16,24 +16,7 @@
 
 package org.springframework.boot.context.config;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
-
 import org.apache.commons.logging.Log;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -69,6 +52,22 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * {@link EnvironmentPostProcessor} that configures the context environment by loading
@@ -316,14 +315,22 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 
 		private final ResourceLoader resourceLoader;
 
+		// 两个值：properties、yaml PropertiesPropertySourceLoader、YamlPropertySourceLoader
 		private final List<PropertySourceLoader> propertySourceLoaders;
 
+		// 激活的有哪些配置文件
+		// 这是一个队列，但是往这个队列里面存放的顺序是优先级最低的会被放在最前面
+		// 因为在后面会有一个倒序操作。
 		private Deque<Profile> profiles;
 
+		// 这个属性里面存放的与 profiles 属性的是一样的，目前还不清楚为什么还要多来一个。
+		// 也许，profiles 会被清空的原因吧。
 		private List<Profile> processedProfiles;
 
 		private boolean activatedProfiles;
 
+		// 这里虽然定义的是一个Map，但是它的实例对象是一个LinkedHashMap
+		// 所以它里面存放的数据是有顺序的，先put 的在前面。
 		private Map<Profile, MutablePropertySources> loaded;
 
 		private Map<DocumentsCacheKey, List<Document>> loadDocumentsCache = new HashMap<>();
@@ -342,18 +349,30 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 						this.profiles = new LinkedList<>();
 						this.processedProfiles = new LinkedList<>();
 						this.activatedProfiles = false;
+						// 这里对loaded 进行实例化，它的实例是一个有序的HashMap。
 						this.loaded = new LinkedHashMap<>();
+						// 对profiles 进行初始化操作，初始化之后，它就会存储配置了哪些激活的配置文件
+						// 如：null(application.*), dev(application-dev.*), defaultInner(application-defaultInner.*)
 						initializeProfiles();
+						// 循环处理每一个激活的配置
+						// 这里循环是因为每一个都有不同的后缀(*.properties, *.xml, *.yaml, *.yml)，
+						// 以及系统所遍历的默认的基础路径(file:./config/, file:./, classpath:/config/, classpath:/)
 						while (!this.profiles.isEmpty()) {
 							Profile profile = this.profiles.poll();
 							if (isDefaultProfile(profile)) {
 								addProfileToEnvironment(profile.getName());
 							}
+							// 这里的addToLoaded() 是一个回调方法，它的作用就是给this.loaded 填充具体的值
+							// 这里给this.loaded 填充的值的顺序是优先级低的会被填充在前面，优先级高的会被填充在后面。
+							// 因为 this.profiles 中的顺序是这样的。而在后面会单独对this.loaded 中的顺序进行倒排序。
 							load(profile, this::getPositiveProfileFilter,
 									addToLoaded(MutablePropertySources::addLast, false));
 							this.processedProfiles.add(profile);
 						}
+						// TODO: suyh - 前面的不都已经将所有的配置项都加载了吗，这里为什么还有一个呢？？？
+						// 这里估计是历史原因才保留的吧，因为第一个参数是null 的总是会被加载的呀。
 						load(null, this::getNegativeProfileFilter, addToLoaded(MutablePropertySources::addFirst, true));
+						// 对this.loaded 中的配置文件进行倒序，并将这个顺序添加到 environment 对象的对应属性中。
 						addLoadedPropertySources();
 						applyActiveProfiles(defaultProperties);
 					});
@@ -454,6 +473,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 		}
 
 		private void load(Profile profile, DocumentFilterFactory filterFactory, DocumentConsumer consumer) {
+			// getSearchLocations() 将获取到系统所遍历的默认的基础路径
 			getSearchLocations().forEach((location) -> {
 				boolean isFolder = location.endsWith("/");
 				Set<String> names = isFolder ? getSearchNames() : NO_SEARCH_NAMES;
