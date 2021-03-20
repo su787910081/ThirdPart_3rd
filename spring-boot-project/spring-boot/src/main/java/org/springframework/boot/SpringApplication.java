@@ -372,13 +372,14 @@ public class SpringApplication {
 		// Create and configure the environment
 		// 获取对应的ConfigurableEnvironment，跟进去
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
-		// 配置环境，系统属性与自定义的配置属性
+		// 加载默认配置：系统属性与自定义的配置属性
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
 		// 发布环境已准备事件，这是第二次发布事件(系统环境初始化完成的事件)
 		// 我们可以到 SimpleApplicationEventMulticaster.multicastEvent(ApplicationEvent, ResolvableType)
 		// 去看下根据类型能获取到哪些监听器。
 		// 其中有一个非常核心的监听器：ConfigFileApplicationListener，主要用来处理项目配置。
 		ConfigurationPropertySources.attach(environment);
+		// 通知环境监听器，加载项目中的配置文件
 		listeners.environmentPrepared(environment);
 		bindToSpringApplication(environment);
 		if (!this.isCustomEnvironment) {
@@ -524,6 +525,7 @@ public class SpringApplication {
 		}
 		switch (this.webApplicationType) {
 		case SERVLET:
+			// 整个springboot应用运行环境的实现类，后面所有关于配置和环境的操作都基于此类。
 			return new StandardServletEnvironment();
 		case REACTIVE:
 			return new StandardReactiveWebEnvironment();
@@ -549,6 +551,7 @@ public class SpringApplication {
 			environment.setConversionService((ConfigurableConversionService) conversionService);
 		}
 		// 配置系统属性到 AbstractEnvironment.propertyResolver 属性中
+		// 加载启动命令行配置属性
 		configurePropertySources(environment, args);
 		// 配置profile 激活的属性到 AbstractEnvironment.propertyResolver 属性中
 		// 这里应该就是aplication* 里面配置的属性。
@@ -563,12 +566,14 @@ public class SpringApplication {
 	 * @see #configureEnvironment(ConfigurableEnvironment, String[])
 	 */
 	protected void configurePropertySources(ConfigurableEnvironment environment, String[] args) {
+		// 获取配置存储集合的引用
 		MutablePropertySources sources = environment.getPropertySources();
 		// 添加默认属性
 		if (this.defaultProperties != null && !this.defaultProperties.isEmpty()) {
 			sources.addLast(new MapPropertySource("defaultProperties", this.defaultProperties));
 		}
 		// 添加命令行属性
+		// 加载命令行配置
 		if (this.addCommandLineProperties && args.length > 0) {
 			String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
 			if (sources.contains(name)) {
