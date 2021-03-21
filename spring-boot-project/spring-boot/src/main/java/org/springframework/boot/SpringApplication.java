@@ -318,9 +318,9 @@ public class SpringApplication {
 		configureHeadlessProperty();
 		// 获取spring.factories中的监听器变量，args为指定的参数数组，默认为当前类SpringApplication
 		// 第一步：获取并启动监听器
-		// 1) 获取监听器
+		// 1) 获取启动监听器的监听器
 		SpringApplicationRunListeners listeners = getRunListeners(args);
-		// 2) 启动监听器
+		// 2) 用该监听器来启动所有监听器
 		listeners.starting();
 		try {
 			// 构建应用参数
