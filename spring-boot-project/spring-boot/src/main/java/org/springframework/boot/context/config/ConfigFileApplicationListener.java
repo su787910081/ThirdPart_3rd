@@ -198,9 +198,13 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 		 * DEFAULT_SEARCH_LOCATIONS= "classpath:/,classpath:/config/,file:./,file:./config/";
 		 */
 		List<EnvironmentPostProcessor> postProcessors = loadPostProcessors();
+		// suyh - 这里注意一下，把this 添加到这个List 的最后了。所以在下面的那个for 循环的最后一个将会执行当前类的方法.
 		postProcessors.add(this);
 		AnnotationAwareOrderComparator.sort(postProcessors);
+		// suyh - TODO: 在这个循环执行完了之后，属性配置文件中配置的值就可以在environment 中获取到了。但是具体是怎么加载的呢？
+		// suyh - 上面postProcessors.add(this) 将自己添加到了这个循环中。所以这个循环的最后一个实例的执行就是配置文件的加载操作。
 		for (EnvironmentPostProcessor postProcessor : postProcessors) {
+			// suyh - 这里调用了当前类的addPropertySources() 方法，在这个方法中进行了配置文件的加载。
 			postProcessor.postProcessEnvironment(event.getEnvironment(), event.getSpringApplication());
 		}
 	}
@@ -346,6 +350,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 			/*
 			 * propertySourceLoaders通过 SpringFactoriesLoader 获取当前项目中类型为 PropertySourceLoader 的所有实现类，
 			 * 默认有两个实现类: PropertiesPropertySourceLoader、YamlPropertySourceLoader
+			 * suyh - 显然，这两个类就是对配置文件进行加载并处理的实现类。
 			 */
 			this.propertySourceLoaders = SpringFactoriesLoader.loadFactories(PropertySourceLoader.class,
 					getClass().getClassLoader());
@@ -359,7 +364,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 						this.activatedProfiles = false;
 						// 这里对loaded 进行实例化，它的实例是一个有序的HashMap。
 						this.loaded = new LinkedHashMap<>();
-						// 对profiles 进行初始化操作，初始化之后，它就会存储配置了哪些激活的配置文件
+						// 对profiles 进行初始化操作，初始化之后，它就会存储配置了哪些激活的配置文件。就是spring.profiles.active、spring.profiles.include配置的值
 						// 如：null(application.*), dev(application-dev.*), defaultInner(application-defaultInner.*)
 						initializeProfiles();
 						// 循环处理每一个激活的配置
