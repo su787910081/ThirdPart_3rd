@@ -321,9 +321,10 @@ public class SpringApplication {
 		// 1) 获取启动监听器的监听器
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		// 2) 用该监听器来启动所有监听器
+		// suyh - 这里相当于发布一个启动事件，所有监听这个启动事件的监听器的starting() 方法都会被调用。
 		listeners.starting();
 		try {
-			// 构建应用参数
+			// 构建应用参数，首先用(启动)命令行参数来初始化应用参数
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
 			// 第二步：构造容器环境
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
@@ -380,6 +381,8 @@ public class SpringApplication {
 		// 其中有一个非常核心的监听器：ConfigFileApplicationListener，主要用来处理项目配置。
 		ConfigurationPropertySources.attach(environment);
 		// 通知环境监听器，加载项目中的配置文件
+		// suyh - TODO: 在这之前application-dev.properties、application.properties 中的值都还是null
+		// suyh - TODO: 但就是这一行代码执行之后配置文件中的值就加载出来了，这些是在哪里加载的呀。厉害了。
 		listeners.environmentPrepared(environment);
 		bindToSpringApplication(environment);
 		if (!this.isCustomEnvironment) {
@@ -482,6 +485,7 @@ public class SpringApplication {
 	private <T> Collection<T> getSpringFactoriesInstances(Class<T> type, Class<?>[] parameterTypes, Object... args) {
 		ClassLoader classLoader = getClassLoader();
 		// Use names and ensure unique to protect against duplicates
+		// suyh - 加载spring.factories 配置的对应接口的实现类的全路类名。
 		Set<String> names = new LinkedHashSet<>(SpringFactoriesLoader.loadFactoryNames(type, classLoader));
 		// spring.factories
 		List<T> instances = createSpringFactoriesInstances(type, parameterTypes, classLoader, args, names);
@@ -548,13 +552,15 @@ public class SpringApplication {
 	protected void configureEnvironment(ConfigurableEnvironment environment, String[] args) {
 		if (this.addConversionService) {
 			ConversionService conversionService = ApplicationConversionService.getSharedInstance();
+			// suyh - 翻译：设置对属性执行类型转换时要使用的ConfigurableConversionService
 			environment.setConversionService((ConfigurableConversionService) conversionService);
 		}
-		// 配置系统属性到 AbstractEnvironment.propertyResolver 属性中
-		// 加载启动命令行配置属性
+
+		// suyh - 这就是将命令行参数添加到environment 中
 		configurePropertySources(environment, args);
 		// 配置profile 激活的属性到 AbstractEnvironment.propertyResolver 属性中
-		// 这里应该就是aplication* 里面配置的属性。
+		// suyh - 这里仅仅是加载spring.profiles.active 的值，第二个参数还没有用，没有意义。
+		// suyh - 仅仅是将spring.profiles.active 的值填充到environment 并没有做实际加载。
 		configureProfiles(environment, args);
 	}
 
@@ -572,8 +578,7 @@ public class SpringApplication {
 		if (this.defaultProperties != null && !this.defaultProperties.isEmpty()) {
 			sources.addLast(new MapPropertySource("defaultProperties", this.defaultProperties));
 		}
-		// 添加命令行属性
-		// 加载命令行配置
+		// suyh - 如果命令行参数有值，则添加到sources 中
 		if (this.addCommandLineProperties && args.length > 0) {
 			String name = CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME;
 			if (sources.contains(name)) {

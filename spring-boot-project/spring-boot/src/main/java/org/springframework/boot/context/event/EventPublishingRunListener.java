@@ -91,6 +91,8 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 
 	@Override
 	public void environmentPrepared(ConfigurableEnvironment environment) {
+		// suyh - TODO: initialMulticaster.multicastEvent(..) 在这个方法里面的SimpleApplicationEventMulticaster.multicastEvent(..) 方法中进行了配置文件的加载。
+		// suyh - TODO: 然后终究会走到ConfigFileApplicationListener.onApplicationEnvironmentPreparedEvent(..) 这个方法中
 		this.initialMulticaster
 				.multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
 	}
