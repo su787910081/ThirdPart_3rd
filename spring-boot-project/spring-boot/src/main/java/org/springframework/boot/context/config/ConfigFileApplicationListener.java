@@ -204,7 +204,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 		// suyh - TODO: 在这个循环执行完了之后，属性配置文件中配置的值就可以在environment 中获取到了。但是具体是怎么加载的呢？
 		// suyh - 上面postProcessors.add(this) 将自己添加到了这个循环中。所以这个循环的最后一个实例的执行就是配置文件的加载操作。
 		for (EnvironmentPostProcessor postProcessor : postProcessors) {
-			// suyh - 这里调用了当前类的addPropertySources() 方法，在这个方法中进行了配置文件的加载。
+			// suyh - 这里调用了this.addPropertySources() 方法，在这个方法中进行了配置文件的加载。
 			postProcessor.postProcessEnvironment(event.getEnvironment(), event.getSpringApplication());
 		}
 	}

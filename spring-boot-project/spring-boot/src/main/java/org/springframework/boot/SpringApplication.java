@@ -326,7 +326,7 @@ public class SpringApplication {
 		try {
 			// 构建应用参数，首先用(启动)命令行参数来初始化应用参数
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
-			// 第二步：构造容器环境
+			// 第二步：配置属性的初始化，包括命令行参数、系统属性、环境变量、配置变量等。
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
 			// 设置需要忽略的bean
 			configureIgnoreBeanInfo(environment);
@@ -371,16 +371,18 @@ public class SpringApplication {
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
 			ApplicationArguments applicationArguments) {
 		// Create and configure the environment
-		// 获取对应的ConfigurableEnvironment，跟进去
+		// 获取或者创建对应的ConfigurableEnvironment，一般情况默认都是创建，除非添加了自定义的。
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
-		// 加载默认配置：系统属性与自定义的配置属性
+		// 命令行参数的初始化，它的优先级在springboot 中是最高的。
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
+		// 看代码里面是将原有一个属性源给删除掉，添加了一个空的非null 的对象进去，仅此而以。
+		ConfigurationPropertySources.attach(environment);
 		// 发布环境已准备事件，这是第二次发布事件(系统环境初始化完成的事件)
 		// 我们可以到 SimpleApplicationEventMulticaster.multicastEvent(ApplicationEvent, ResolvableType)
 		// 去看下根据类型能获取到哪些监听器。
 		// 其中有一个非常核心的监听器：ConfigFileApplicationListener，主要用来处理项目配置。
-		ConfigurationPropertySources.attach(environment);
 		// 通知环境监听器，加载项目中的配置文件
+		// suyh - 应用运行相关的监听器，在这里发布一个环境预处理事件，相应的监听器会被触发，并做环境预处理(environmentPrepared 接口将被调用)的工作。
 		// suyh - TODO: 在这之前application-dev.properties、application.properties 中的值都还是null
 		// suyh - TODO: 但就是这一行代码执行之后配置文件中的值就加载出来了，这些是在哪里加载的呀。厉害了。
 		listeners.environmentPrepared(environment);

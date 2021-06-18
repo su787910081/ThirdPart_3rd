@@ -86,6 +86,7 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 		 *
 		 * LoggingApplicationListener.onApplicationEvent() 日志执行监听器。
 		 */
+		// suyh - 广播ApplicationStartingEvent 事件，所有监听了该事件的监听器都会被调用。
 		this.initialMulticaster.multicastEvent(new ApplicationStartingEvent(this.application, this.args));
 	}
 
@@ -93,6 +94,7 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 	public void environmentPrepared(ConfigurableEnvironment environment) {
 		// suyh - TODO: initialMulticaster.multicastEvent(..) 在这个方法里面的SimpleApplicationEventMulticaster.multicastEvent(..) 方法中进行了配置文件的加载。
 		// suyh - TODO: 然后终究会走到ConfigFileApplicationListener.onApplicationEnvironmentPreparedEvent(..) 这个方法中
+		// suyh - 这里是广播一个ApplicationEnvironmentPreparedEvent 类型的事件，相关的监听器的对应接口将被调用。
 		this.initialMulticaster
 				.multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
 	}
